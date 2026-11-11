@@ -38,7 +38,8 @@ function render(){
  const list=batches.filter(b=>f==="all"||(f==="flagged"?b.flagged:b.status===f));
  $("#rows").innerHTML=list.map(b=>'<tr><td><b>'+esc(b.batch_code)+'</b></td><td>'+esc(b.product_name)+'</td><td>'+fmtDate(b.start_date)+'</td><td>'+(latest(b,"ph")??"-")+'</td><td>'+(latest(b,"brix")??"-")+'</td><td>'+(latest(b,"temperature")??"-")+'</td><td><span class="'+(b.flagged?"warn":"ok")+'">'+(b.flagged?"ต้องตรวจสอบ":b.status==="completed"?"เสร็จสิ้น":"กำลังดำเนินการ")+'</span></td><td><button class="btn alt" type="button" data-open-batch="'+b.id+'">ดู</button></td></tr>').join("");
  $("#emptyBatches").hidden=batches.length>0;
- $("#recordBatch").innerHTML=batches.filter(b=>b.status==="active").map(b=>'<option value="'+b.id+'">'+esc(b.batch_code)+' — '+esc(b.product_name)+'</option>').join("")||'<option value="">ไม่มี Batch ที่กำลังดำเนินการ</option>';
+const uniqueActive=new Map();batches.filter(b=>b.status==="active").forEach(b=>{const key=String(b.batch_code||"").replace(/\s+/g,"").toUpperCase();if(key&&!uniqueActive.has(key))uniqueActive.set(key,b);});
+ $("#recordBatch").innerHTML=[...uniqueActive.values()].map(b=>'<option value="'+b.id+'">'+esc(b.batch_code)+' — '+esc(b.product_name)+'</option>').join("")||'<option value="">ไม่มี Batch ที่กำลังดำเนินการ</option>';
  if(selectedBatchId&&batches.some(b=>b.id===selectedBatchId))showBatch(selectedBatchId);
 }
 async function showBatch(id){
