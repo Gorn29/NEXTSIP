@@ -193,3 +193,43 @@ alter table public.product_passports
 
 create index if not exists product_passports_batch_id_idx
   on public.product_passports (batch_id);
+
+
+-- Public-safe traceability lookup: expose only published product details and
+-- non-sensitive Batch start date/status. Never expose owner names or measurements.
+create or replace function public.get_public_passport(p_passport_id uuid)
+returns table (
+  product_name text,
+  origin text,
+  ingredients text,
+  batch_reference text,
+  story text,
+  created_at timestamptz,
+  batch_start_date date,
+  batch_status text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    p.product_name,
+    p.origin,
+    p.ingredients,
+    p.batch_reference,
+    p.story,
+    p.created_at,
+    b.start_date,
+    b.status
+  from public.product_passports p
+  left join public.production_batches b
+    on b.id = p.batch_id
+   and b.user_id = p.user_id
+  where p.id = p_passport_id
+    and p.is_published = true
+  limit 1;
+$$;
+
+revoke all on function public.get_public_passport(uuid) from public;
+grant execute on function public.get_public_passport(uuid) to anon, authenticated;
