@@ -9,14 +9,18 @@ const batchField=document.createElement("div");
 batchField.className="field";
 batchField.innerHTML='<label for="passportBatchLink">เชื่อมกับ Batch Guardian (ไม่บังคับ)</label><select id="passportBatchLink"><option value="">ไม่เชื่อม Batch</option></select><small class="muted">เลือก Batch ที่สร้างไว้ ระบบจะนำรหัส Batch มาใส่ใน Passport ให้อัตโนมัติ</small>';
 $("#pref").closest(".field").before(batchField);
-let autoFilledBatchCode="";
+let autoFilledBatchCode="",batchOptionsRequest=0;
 async function loadBatchOptions(){
+ const requestId=++batchOptionsRequest;
  const select=$("#passportBatchLink");
  select.innerHTML='<option value="">ไม่เชื่อม Batch</option>';
  if(!currentUser){select.disabled=true;return;}
  select.disabled=false;
  const {data,error}=await supabase.from("production_batches").select("id,batch_code,product_name,status").order("created_at",{ascending:false});
+ if(requestId!==batchOptionsRequest)return;
  if(error){select.innerHTML='<option value="">โหลดรายการ Batch ไม่สำเร็จ</option>';select.disabled=true;return;}
+ // Rebuild after the request completes; overlapping realtime/focus refreshes must not append duplicate options.
+ select.innerHTML='<option value="">ไม่เชื่อม Batch</option>';
  // Show only one option for each batch code (keep the newest record).
  const uniqueBatches=new Map();
  (data||[]).forEach(b=>{
