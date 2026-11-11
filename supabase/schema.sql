@@ -80,9 +80,13 @@ create table if not exists public.flavor_concepts (
   ingredients text[] not null default '{}',
   market text not null default '',
   goal text not null default '',
+  flavor_tags text[] not null default '{}',
   flavor_profile jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table public.flavor_concepts
+  add column if not exists flavor_tags text[] not null default '{}';
 
 alter table public.flavor_concepts enable row level security;
 
