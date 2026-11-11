@@ -106,3 +106,53 @@ using ((select auth.uid()) = user_id);
 
 create index if not exists flavor_concepts_user_created_idx
 on public.flavor_concepts (user_id, created_at desc);
+
+-- Batch Guardian cloud records (each producer can access only their own batches).
+create table if not exists public.production_batches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  batch_code text not null,
+  product_name text not null,
+  recipe_version text not null default '',
+  start_date date not null,
+  owner_name text not null default '',
+  status text not null default 'active' check (status in ('active', 'completed')),
+  flagged boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (user_id, batch_code)
+);
+
+create table if not exists public.batch_measurements (
+  id uuid primary key default gen_random_uuid(),
+  batch_id uuid not null references public.production_batches (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  measured_at timestamptz not null default now(),
+  ph numeric(5,2),
+  brix numeric(6,2),
+  temperature numeric(6,2),
+  note text not null default ''
+);
+
+create index if not exists production_batches_user_created_idx on public.production_batches (user_id, created_at desc);
+create index if not exists batch_measurements_batch_time_idx on public.batch_measurements (batch_id, measured_at desc);
+alter table public.production_batches enable row level security;
+alter table public.batch_measurements enable row level security;
+
+drop policy if exists "Users can read their own batches" on public.production_batches;
+create policy "Users can read their own batches" on public.production_batches for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "Users can insert their own batches" on public.production_batches;
+create policy "Users can insert their own batches" on public.production_batches for insert to authenticated with check ((select auth.uid()) = user_id);
+drop policy if exists "Users can update their own batches" on public.production_batches;
+create policy "Users can update their own batches" on public.production_batches for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+drop policy if exists "Users can delete their own batches" on public.production_batches;
+create policy "Users can delete their own batches" on public.production_batches for delete to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "Users can read their own batch measurements" on public.batch_measurements;
+create policy "Users can read their own batch measurements" on public.batch_measurements for select to authenticated using ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid())));
+drop policy if exists "Users can insert their own batch measurements" on public.batch_measurements;
+create policy "Users can insert their own batch measurements" on public.batch_measurements for insert to authenticated with check ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid())));
+drop policy if exists "Users can update their own batch measurements" on public.batch_measurements;
+create policy "Users can update their own batch measurements" on public.batch_measurements for update to authenticated using ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid()))) with check ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid())));
+drop policy if exists "Users can delete their own batch measurements" on public.batch_measurements;
+create policy "Users can delete their own batch measurements" on public.batch_measurements for delete to authenticated using ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid())));
+
