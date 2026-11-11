@@ -17,7 +17,6 @@ function render(){
  $("#rows").innerHTML=list.map(b=>'<tr><td><b>'+esc(b.batch_code)+'</b></td><td>'+esc(b.product_name)+'</td><td>'+fmtDate(b.start_date)+'</td><td>'+(latest(b,"ph")??"-")+'</td><td>'+(latest(b,"brix")??"-")+'</td><td>'+(latest(b,"temperature")??"-")+'</td><td><span class="'+(b.flagged?"warn":"ok")+'">'+(b.flagged?"ต้องตรวจสอบ":b.status==="completed"?"เสร็จสิ้น":"กำลังดำเนินการ")+'</span></td><td><button class="btn alt" type="button" data-open-batch="'+b.id+'">ดู</button></td></tr>').join("");
  $("#emptyBatches").hidden=batches.length>0;
  $("#recordBatch").innerHTML=batches.filter(b=>b.status==="active").map(b=>'<option value="'+b.id+'">'+esc(b.batch_code)+' — '+esc(b.product_name)+'</option>').join("")||'<option value="">ไม่มี Batch ที่กำลังดำเนินการ</option>';
- document.querySelectorAll("[data-open-batch]").forEach(x=>x.onclick=()=>showBatch(x.dataset.openBatch));
  if(selectedBatchId&&batches.some(b=>b.id===selectedBatchId))showBatch(selectedBatchId);
 }
 async function showBatch(id){
@@ -85,6 +84,7 @@ $("#recordForm").onsubmit=async e=>{
  if(flag&&!b.flagged){const u=await supabase.from("production_batches").update({flagged:true}).eq("id",b.id);if(u.error){btn.disabled=false;await load();return status("บันทึกค่าการวัดแล้ว แต่เปลี่ยนสถานะตรวจสอบไม่สำเร็จ: "+u.error.message,true);}}
  btn.disabled=false;$("#recordForm").reset();selectedBatchId=b.id;await load();showBatch(b.id);status("บันทึกค่าการวัดลง Supabase Cloud แล้ว");
 };
+document.addEventListener("click",(event)=>{const button=event.target.closest("[data-open-batch]");if(button){showBatch(button.dataset.openBatch);}});
 $("#batchFilter").onchange=render;
 supabase.auth.onAuthStateChange(()=>window.setTimeout(load,0));
 load();
