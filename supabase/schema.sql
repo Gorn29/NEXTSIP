@@ -156,3 +156,30 @@ create policy "Users can update their own batch measurements" on public.batch_me
 drop policy if exists "Users can delete their own batch measurements" on public.batch_measurements;
 create policy "Users can delete their own batch measurements" on public.batch_measurements for delete to authenticated using ((select auth.uid()) = user_id and exists (select 1 from public.production_batches b where b.id = batch_id and b.user_id = (select auth.uid())));
 
+
+
+-- Public Sip Passport pages. Only published passport fields are readable without login.
+create table if not exists public.product_passports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  product_name text not null check (char_length(product_name) between 1 and 120),
+  origin text not null default '' check (char_length(origin) <= 160),
+  ingredients text not null default '' check (char_length(ingredients) <= 500),
+  batch_reference text not null default '' check (char_length(batch_reference) <= 80),
+  story text not null default '' check (char_length(story) <= 2000),
+  is_published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists product_passports_user_created_idx on public.product_passports (user_id, created_at desc);
+alter table public.product_passports enable row level security;
+drop policy if exists "Owners can read their passports" on public.product_passports;
+create policy "Owners can read their passports" on public.product_passports for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "Public can read published passports" on public.product_passports;
+create policy "Public can read published passports" on public.product_passports for select to anon, authenticated using (is_published = true);
+drop policy if exists "Owners can create passports" on public.product_passports;
+create policy "Owners can create passports" on public.product_passports for insert to authenticated with check ((select auth.uid()) = user_id);
+drop policy if exists "Owners can update passports" on public.product_passports;
+create policy "Owners can update passports" on public.product_passports for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+drop policy if exists "Owners can delete passports" on public.product_passports;
+create policy "Owners can delete passports" on public.product_passports for delete to authenticated using ((select auth.uid()) = user_id);
