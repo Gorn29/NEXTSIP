@@ -5,10 +5,32 @@ const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=s=>document.querySelector(s);
 const PAGE_URL="https://maxpookayak2-rgb.github.io/NEXTSIP/passport.html";
 let currentUser=null,currentId=null,lang="th";
+const batchField=document.createElement("div");
+batchField.className="field";
+batchField.innerHTML='<label for="passportBatchLink">เชื่อมกับ Batch Guardian (ไม่บังคับ)</label><select id="passportBatchLink"><option value="">ไม่เชื่อม Batch</option></select><small class="muted">เลือก Batch ที่สร้างไว้ ระบบจะนำรหัส Batch มาใส่ใน Passport ให้อัตโนมัติ</small>';
+$("#pref").closest(".field").before(batchField);
+async function loadBatchOptions(){
+ const select=$("#passportBatchLink");
+ select.innerHTML='<option value="">ไม่เชื่อม Batch</option>';
+ if(!currentUser){select.disabled=true;return;}
+ select.disabled=false;
+ const {data,error}=await supabase.from("production_batches").select("id,batch_code,product_name,status").order("created_at",{ascending:false});
+ if(error){select.innerHTML='<option value="">โหลดรายการ Batch ไม่สำเร็จ</option>';select.disabled=true;return;}
+ (data||[]).forEach(b=>{
+  const o=document.createElement("option");o.value=b.id;o.dataset.code=b.batch_code;
+  o.textContent=b.batch_code+" — "+b.product_name+(b.status==="completed"?" (เสร็จสิ้น)":"");
+  select.append(o);
+ });
+}
+$("#passportBatchLink").addEventListener("change",()=>{
+ const option=$("#passportBatchLink").selectedOptions[0];
+ if(option?.dataset.code)$("#pref").value=option.dataset.code;
+ preview();
+});
 const labels={th:["วัตถุดิบ","รหัส Batch"],en:["Ingredients","Batch reference"],zh:["原料","批次编号"],ja:["原材料","バッチ番号"]};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function message(t,bad=false){$("#passportMessage").textContent=t;$("#passportMessage").style.color=bad?"#a34732":"#456447";}
-function values(){return {product_name:$("#pname").value.trim(),origin:$("#origin").value.trim(),ingredients:$("#pingredients").value.trim(),batch_reference:$("#pref").value.trim(),story:$("#story").value.trim()};}
+function values(){return {product_name:$("#pname").value.trim(),origin:$("#origin").value.trim(),ingredients:$("#pingredients").value.trim(),batch_reference:$("#pref").value.trim(),batch_id:$("#passportBatchLink").value||null,story:$("#story").value.trim()};}
 function preview(d=values()){
  $("#vname").textContent=d.product_name||"Untitled product";$("#vorigin").textContent=d.origin||"-";
  $("#ving").textContent=d.ingredients||"-";$("#vref").textContent=d.batch_reference||"-";$("#vstory").textContent=d.story||"-";
@@ -19,7 +41,7 @@ function qrFor(id){
  $("#qr").src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(url);
  $("#passportPublicLink").innerHTML='<a href="'+url+'" target="_blank" rel="noopener">เปิดหน้า Passport สาธารณะ ↗</a>';
 }
-function fill(d){currentId=d.id;$("#pname").value=d.product_name||"";$("#origin").value=d.origin||"";$("#pingredients").value=d.ingredients||"";$("#pref").value=d.batch_reference||"";$("#story").value=d.story||"";preview(d);qrFor(d.id);}
+function fill(d){currentId=d.id;$("#pname").value=d.product_name||"";$("#origin").value=d.origin||"";$("#pingredients").value=d.ingredients||"";$("#pref").value=d.batch_reference||"";$("#passportBatchLink").value=d.batch_id||"";$("#story").value=d.story||"";preview(d);qrFor(d.id);}
 function renderLibrary(rows){
  const el=$("#passportLibrary");
  if(!rows.length){el.innerHTML='<p class="muted">ยังไม่มี Passport ที่บันทึกไว้ กรอกข้อมูลแล้วกด “บันทึกและเผยแพร่ Passport”</p>';return;}
@@ -30,6 +52,7 @@ async function loadLibrary(){
  const {data:{session}}=await supabase.auth.getSession();currentUser=session?.user||null;
  if(!currentUser){$("#passportCloudStatus").textContent="เข้าสู่ระบบเพื่อบันทึก Passport";$("#passportLibrary").innerHTML='<p class="muted">คุณสามารถดูตัวอย่างได้ แต่ต้องเข้าสู่ระบบก่อนบันทึกและเผยแพร่ <a href="./login.html">เข้าสู่ระบบ</a></p>';$("#savePassport").disabled=true;return;}
  $("#savePassport").disabled=false;$("#passportCloudStatus").textContent="Supabase Cloud";
+ await loadBatchOptions();
  const {data,error}=await supabase.from("product_passports").select("id,product_name,origin,ingredients,batch_reference,story,is_published,created_at,updated_at").order("created_at",{ascending:false});
  if(error){$("#passportCloudStatus").textContent="โหลด Passport ไม่สำเร็จ";$("#passportLibrary").textContent=error.message;return;}
  renderLibrary(data||[]);
@@ -51,7 +74,7 @@ $("#savePassport").onclick=async()=>{
  currentId=result.data.id;qrFor(currentId);message("บันทึกและเผยแพร่สำเร็จแล้ว QR นี้เปิดหน้า Passport จริงได้");
  await loadLibrary();
 };
-$("#newPassport").onclick=()=>{currentId=null;$("#pname").value="";$("#origin").value="";$("#pingredients").value="";$("#pref").value="";$("#story").value="";$("#qr").removeAttribute("src");$("#passportPublicLink").textContent="บันทึก Passport ก่อนเพื่อสร้าง QR";preview();message("เริ่มสร้าง Passport รายการใหม่");};
+$("#newPassport").onclick=()=>{currentId=null;$("#pname").value="";$("#origin").value="";$("#pingredients").value="";$("#pref").value="";$("#passportBatchLink").value="";$("#story").value="";$("#qr").removeAttribute("src");$("#passportPublicLink").textContent="บันทึก Passport ก่อนเพื่อสร้าง QR";preview();message("เริ่มสร้าง Passport รายการใหม่");};
 ["pname","origin","pingredients","pref","story"].forEach(id=>$("#"+id).addEventListener("input",()=>preview()));
 document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{lang=b.dataset.lang;document.querySelectorAll("[data-lang]").forEach(x=>x.classList.toggle("on",x===b));preview();});
 $("#check").onclick=()=>{let s=$("#guardText").value.toLowerCase(),hits=["ชวนดื่ม","ดื่มกัน","ดื่มเลย","ดื่มแล้ว","drink now","come drink","สุขภาพดี","รักษาโรค","ป้องกันโรค","ลดน้ำหนัก","cure","health benefit","detox"].filter(x=>s.includes(x));$("#guardResult").className="result "+(hits.length?"bad":"good");$("#guardResult").textContent=hits.length?"ควรตรวจสอบข้อความที่พบ: "+hits.join(", ")+" — ระบบนี้ไม่ใช่คำรับรองทางกฎหมาย":"ไม่พบคำสำคัญตามกฎพื้นฐาน แต่ควรตรวจทานก่อนเผยแพร่";};
