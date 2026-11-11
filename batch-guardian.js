@@ -28,6 +28,8 @@ async function showBatch(id){
  if($("#completeBatch"))$("#completeBatch").onclick=()=>updateBatch(b,{status:"completed"});
  $("#toggleFlag").onclick=()=>updateBatch(b,{flagged:!b.flagged});
  if(b.status==="active")$("#recordBatch").value=id;
+ const detailSection=$("#historyTitle").closest(".grid");
+ if(detailSection) detailSection.scrollIntoView({behavior:"smooth",block:"start"});
 }
 async function updateBatch(b,patch){
  const {error}=await supabase.from("production_batches").update(patch).eq("id",b.id);
