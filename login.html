@@ -19,9 +19,11 @@
         <form id="login-form">
           <label class="field"><span>อีเมล</span><input id="login-email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
           <label class="field"><span>รหัสผ่าน</span><input id="login-password" type="password" autocomplete="current-password" required minlength="8" placeholder="กรอกรหัสผ่าน"></label>
-          <button class="auth-primary" type="submit">เข้าสู่ระบบ</button>
-        </form>
-        <button class="auth-link" id="show-register" type="button">ยังไม่มีบัญชี? สมัครสมาชิก</button>
+          </form>
+        <div class="auth-actions">
+          <button class="auth-secondary-action" id="show-register" type="button">ยังไม่มีบัญชี? สมัครสมาชิก</button>
+          <button class="auth-primary" type="submit" form="login-form">เข้าสู่ระบบ</button>
+        </div>
       </div>
       <div id="register-panel" hidden>
         <h1>สร้างบัญชี NEXT SIP</h1>
