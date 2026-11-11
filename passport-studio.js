@@ -4,7 +4,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./supabase-config.js";
 const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=s=>document.querySelector(s);
 const PAGE_URL="https://maxpookayak2-rgb.github.io/NEXTSIP/passport.html";
-let currentUser=null,currentId=null,lang="th";
+let currentUser=null,currentId=null,lang="th",batchRealtimeChannel=null;
 const batchField=document.createElement("div");
 batchField.className="field";
 batchField.innerHTML='<label for="passportBatchLink">เชื่อมกับ Batch Guardian (ไม่บังคับ)</label><select id="passportBatchLink"><option value="">ไม่เชื่อม Batch</option></select><small class="muted">เลือก Batch ที่สร้างไว้ ระบบจะนำรหัส Batch มาใส่ใน Passport ให้อัตโนมัติ</small>';
@@ -20,7 +20,7 @@ async function loadBatchOptions(){
  // Show only one option for each batch code (keep the newest record).
  const uniqueBatches=new Map();
  (data||[]).forEach(b=>{
-  const key=String(b.batch_code||"").trim().toLowerCase();
+  const key=String(b.batch_code||"").replace(/\s+/g,"").toUpperCase();
   if(key&&!uniqueBatches.has(key))uniqueBatches.set(key,b);
  });
  uniqueBatches.forEach(b=>{
@@ -62,11 +62,20 @@ function renderLibrary(rows){
  el.innerHTML=rows.map(r=>'<article class="concept"><span class="tag">PUBLIC PASSPORT</span><h3>'+esc(r.product_name)+'</h3><p class="muted">Batch: '+esc(r.batch_reference||"-")+'</p><p class="muted">'+new Date(r.created_at).toLocaleString("th-TH")+'</p><button class="btn alt" type="button" data-load-passport="'+r.id+'">เปิด / แก้ไข</button> <a href="'+PAGE_URL+'?id='+encodeURIComponent(r.id)+'" target="_blank" rel="noopener">ดูหน้าสาธารณะ ↗</a></article>').join("");
  el.querySelectorAll("[data-load-passport]").forEach(b=>b.onclick=()=>loadOne(b.dataset.loadPassport));
 }
+function ensureBatchRealtime(){
+ if(!currentUser||batchRealtimeChannel)return;
+ batchRealtimeChannel=supabase.channel("passport-batches-"+currentUser.id)
+  .on("postgres_changes",{event:"*",schema:"public",table:"production_batches",filter:"user_id=eq."+currentUser.id},()=>loadBatchOptions())
+  .subscribe();
+}
+window.addEventListener("focus",()=>{if(currentUser)loadBatchOptions();});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&currentUser)loadBatchOptions();});
 async function loadLibrary(){
  const {data:{session}}=await supabase.auth.getSession();currentUser=session?.user||null;
  if(!currentUser){$("#passportCloudStatus").textContent="เข้าสู่ระบบเพื่อบันทึก Passport";$("#passportLibrary").innerHTML='<p class="muted">คุณสามารถดูตัวอย่างได้ แต่ต้องเข้าสู่ระบบก่อนบันทึกและเผยแพร่ <a href="./login.html">เข้าสู่ระบบ</a></p>';$("#savePassport").disabled=true;return;}
  $("#savePassport").disabled=false;$("#passportCloudStatus").textContent="Supabase Cloud";
  await loadBatchOptions();
+ ensureBatchRealtime();
  const {data,error}=await supabase.from("product_passports").select("id,product_name,origin,ingredients,batch_reference,story,is_published,created_at,updated_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});
  if(error){$("#passportCloudStatus").textContent="โหลด Passport ไม่สำเร็จ";$("#passportLibrary").textContent=error.message;return;}
  renderLibrary(data||[]);
@@ -92,5 +101,8 @@ $("#newPassport").onclick=()=>{currentId=null;$("#pname").value="";$("#origin").
 ["pname","origin","pingredients","pref","story"].forEach(id=>$("#"+id).addEventListener("input",()=>preview()));
 document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{lang=b.dataset.lang;document.querySelectorAll("[data-lang]").forEach(x=>x.classList.toggle("on",x===b));preview();});
 $("#check").onclick=()=>{let s=$("#guardText").value.toLowerCase(),hits=["ชวนดื่ม","ดื่มกัน","ดื่มเลย","ดื่มแล้ว","drink now","come drink","สุขภาพดี","รักษาโรค","ป้องกันโรค","ลดน้ำหนัก","cure","health benefit","detox"].filter(x=>s.includes(x));$("#guardResult").className="result "+(hits.length?"bad":"good");$("#guardResult").textContent=hits.length?"ควรตรวจสอบข้อความที่พบ: "+hits.join(", ")+" — ระบบนี้ไม่ใช่คำรับรองทางกฎหมาย":"ไม่พบคำสำคัญตามกฎพื้นฐาน แต่ควรตรวจทานก่อนเผยแพร่";};
-supabase.auth.onAuthStateChange(()=>window.setTimeout(loadLibrary,0));
+supabase.auth.onAuthStateChange((_event,session)=>{
+ if(!session&&batchRealtimeChannel){supabase.removeChannel(batchRealtimeChannel);batchRealtimeChannel=null;}
+ currentUser=session?.user||null;window.setTimeout(loadLibrary,0);
+});
 preview();loadLibrary();
