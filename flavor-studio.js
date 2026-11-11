@@ -30,6 +30,7 @@ function renderRows(rows) {
       <p class="muted">${escapeHTML(row.description)}</p>
       <p class="muted"><b>วัตถุดิบ:</b> ${escapeHTML((row.ingredients || []).join(" · "))}</p>
       <p class="muted"><b>ตลาด:</b> ${escapeHTML(row.market || "-")}</p>
+      ${(row.flavor_tags || []).length ? `<p class="muted"><b>Flavor Tags:</b> ${escapeHTML(row.flavor_tags.join(" · "))}</p>` : ""}
       <p class="muted">บันทึกเมื่อ ${new Date(row.created_at).toLocaleString("th-TH")}</p>
       <button class="btn alt" type="button" data-delete-flavor="${row.id}">ลบรายการ</button>
     </article>
@@ -49,7 +50,7 @@ async function loadConcepts() {
   status.textContent = "Supabase Cloud";
   const { data, error } = await supabase
     .from("flavor_concepts")
-    .select("id,title,concept_type,description,ingredients,market,goal,flavor_profile,created_at")
+    .select("id,title,concept_type,description,ingredients,market,goal,flavor_tags,flavor_profile,created_at")
     .order("created_at", { ascending: false });
   if (error) {
     list.textContent = "โหลดข้อมูลไม่สำเร็จ: " + error.message;
@@ -77,7 +78,8 @@ async function saveConcept(index, button) {
     description: concept[2],
     ingredients: window.NEXTSIP_FLAVOR_INGREDIENTS || [],
     market: $("#market")?.value || "",
-    goal: $("#goal")?.value.trim() || "",
+    goal: "",
+    flavor_tags: window.NEXTSIP_SELECTED_FLAVOR_TAGS || [],
     flavor_profile: {
       fruity: concept.score[0], floral: concept.score[1], herbal: concept.score[2],
       sweet: concept.score[3], acidic: concept.score[4], spicy: concept.score[5]
