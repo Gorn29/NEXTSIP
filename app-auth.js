@@ -6,41 +6,47 @@ const configured = SUPABASE_URL.startsWith("https://")
   && SUPABASE_PUBLISHABLE_KEY
   && !SUPABASE_PUBLISHABLE_KEY.includes("YOUR_");
 
+const top = document.querySelector(".top");
+
+function renderGuest() {
+  const account = document.createElement("div");
+  account.className = "account-bar";
+  account.innerHTML = '<span class="account-email">เข้าใช้งานเพื่อบันทึกข้อมูลส่วนตัว</span><a class="account-logout" href="./login.html">เข้าสู่ระบบ / สมัครสมาชิก</a>';
+  top.append(account);
+}
+
 if (!configured) {
-  window.location.replace("./login.html?setup=1");
+  renderGuest();
 } else {
   const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (error || !session) {
-    window.location.replace("./login.html");
-  } else {
-    const top = document.querySelector(".top");
+  function renderAccount(currentSession) {
+    document.querySelector(".account-bar")?.remove();
+
+    if (!currentSession) {
+      renderGuest();
+      return;
+    }
+
     const account = document.createElement("div");
     account.className = "account-bar";
-    account.innerHTML = `
-      <span class="account-email"></span>
-      <button class="account-logout" type="button">ออกจากระบบ</button>
-    `;
-    top.append(account);
-    account.querySelector(".account-email").textContent = session.user.email || "ผู้ใช้ NEXT SIP";
-    account.querySelector(".account-logout").addEventListener("click", async () => {
-      const button = account.querySelector("button");
+    account.innerHTML = '<span class="account-email"></span><button class="account-logout" type="button">ออกจากระบบ</button>';
+    account.querySelector(".account-email").textContent = currentSession.user.email || "ผู้ใช้ NEXT SIP";
+    account.querySelector(".account-logout").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
       button.disabled = true;
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
         button.disabled = false;
         alert("ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง");
-        return;
-      }
-      window.location.replace("./login.html");
-    });
-
-    supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (event === "SIGNED_OUT" || !nextSession) {
-        window.location.replace("./login.html");
       }
     });
-    document.body.classList.remove("auth-pending");
+    top.append(account);
   }
+
+  renderAccount(session);
+  supabase.auth.onAuthStateChange((_event, nextSession) => {
+    renderAccount(nextSession);
+  });
 }
