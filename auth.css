@@ -29,3 +29,27 @@
 .auth-pending{visibility:hidden}
 @media(max-width:520px){.auth-page{align-items:flex-start;padding:24px 14px}.auth-brand{margin-bottom:18px;font-size:23px}.auth-card{padding:25px 20px;border-radius:20px}.auth-subtitle{margin-bottom:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+/* Login composition aligned to the compact reference dialog */
+.auth-shell{width:min(100%,650px)!important}
+.auth-card{box-sizing:border-box;width:100%;padding:clamp(28px,4.2vw,36px)!important;border-radius:18px!important}
+.auth-kicker{margin-bottom:18px}
+.auth-card .field{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:9px!important;margin:17px 0!important}
+.auth-card .field span{width:100%;text-align:left}
+.auth-card .field input{box-sizing:border-box!important;width:100%!important;height:54px!important;min-height:54px!important;padding:13px 15px!important;border-radius:10px!important;font-size:14px!important}
+.auth-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:11px;align-items:stretch;margin-top:22px}
+.auth-actions .auth-primary,.auth-actions .auth-secondary-action{box-sizing:border-box;width:100%;min-width:0;height:54px;min-height:54px;margin:0;padding:12px 14px;border:1px solid #d9d6c8;border-radius:10px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.auth-actions .auth-primary{background:#49684f;color:#fff;border-color:#49684f}
+.auth-actions .auth-primary:hover{background:#385740}
+.auth-secondary-action{background:#fff;color:#49684f}
+.auth-secondary-action:hover{background:#f6f8f2}
+.auth-link{margin:16px auto 0}
+.auth-divider{margin:25px 0 20px}
+.reset-form .field{margin:0!important}
+.reset-form .auth-secondary{height:54px;min-height:54px;margin-top:10px;border-radius:10px}
+@media(max-width:520px){
+ .auth-page{align-items:center;padding:18px 14px}
+ .auth-card{padding:25px 20px!important}
+ .auth-actions{grid-template-columns:1fr}
+ .auth-actions .auth-primary{grid-row:1}
+ .auth-actions .auth-secondary-action{grid-row:2}
+}
