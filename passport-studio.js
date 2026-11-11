@@ -67,7 +67,7 @@ async function loadLibrary(){
  if(!currentUser){$("#passportCloudStatus").textContent="เข้าสู่ระบบเพื่อบันทึก Passport";$("#passportLibrary").innerHTML='<p class="muted">คุณสามารถดูตัวอย่างได้ แต่ต้องเข้าสู่ระบบก่อนบันทึกและเผยแพร่ <a href="./login.html">เข้าสู่ระบบ</a></p>';$("#savePassport").disabled=true;return;}
  $("#savePassport").disabled=false;$("#passportCloudStatus").textContent="Supabase Cloud";
  await loadBatchOptions();
- const {data,error}=await supabase.from("product_passports").select("id,product_name,origin,ingredients,batch_reference,story,is_published,created_at,updated_at").order("created_at",{ascending:false});
+ const {data,error}=await supabase.from("product_passports").select("id,product_name,origin,ingredients,batch_reference,story,is_published,created_at,updated_at").eq("user_id",currentUser.id).order("created_at",{ascending:false});
  if(error){$("#passportCloudStatus").textContent="โหลด Passport ไม่สำเร็จ";$("#passportLibrary").textContent=error.message;return;}
  renderLibrary(data||[]);
 }
