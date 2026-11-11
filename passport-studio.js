@@ -46,13 +46,13 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function message(t,bad=false){$("#passportMessage").textContent=t;$("#passportMessage").style.color=bad?"#a34732":"#456447";}
 function values(){return {product_name:$("#pname").value.trim(),origin:$("#origin").value.trim(),ingredients:$("#pingredients").value.trim(),batch_reference:$("#pref").value.trim(),batch_id:$("#passportBatchLink").value||null,story:$("#story").value.trim()};}
 function preview(d=values()){
- $("#vname").textContent=d.product_name||"Untitled product";$("#vorigin").textContent=d.origin||"-";
- $("#ving").textContent=d.ingredients||"-";$("#vref").textContent=d.batch_reference||"-";$("#vstory").textContent=d.story||"-";
+ $("#vname").textContent=d.product_name||"ชื่อผลิตภัณฑ์";$("#vorigin").textContent=d.origin||"แหล่งผลิต";
+ $("#ving").textContent=d.ingredients||"ข้อมูลวัตถุดิบจะแสดงที่นี่";$("#vref").textContent=d.batch_reference||"-";$("#vstory").textContent=d.story||"เรื่องราวผลิตภัณฑ์จะแสดงที่นี่";
  $("#ilabel").textContent=labels[lang][0];$("#blabel").textContent=labels[lang][1];
 }
 function qrFor(id){
  const url=PAGE_URL+"?id="+encodeURIComponent(id);
- $("#qr").src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(url);
+ $("#qr").src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(url);$("#qr").hidden=false;
  $("#passportPublicLink").innerHTML='<a href="'+url+'" target="_blank" rel="noopener">เปิดหน้า Passport สาธารณะ ↗</a>';
 }
 function fill(d){currentId=d.id;$("#pname").value=d.product_name||"";$("#origin").value=d.origin||"";$("#pingredients").value=d.ingredients||"";$("#pref").value=d.batch_reference||"";$("#passportBatchLink").value=d.batch_id||"";autoFilledBatchCode=d.batch_id?($("#passportBatchLink").selectedOptions[0]?.dataset.code||d.batch_reference||""):"";$("#story").value=d.story||"";preview(d);qrFor(d.id);}
@@ -97,7 +97,7 @@ $("#savePassport").onclick=async()=>{
  currentId=result.data.id;qrFor(currentId);message("บันทึกและเผยแพร่สำเร็จแล้ว QR นี้เปิดหน้า Passport จริงได้");
  await loadLibrary();
 };
-$("#newPassport").onclick=()=>{currentId=null;$("#pname").value="";$("#origin").value="";$("#pingredients").value="";$("#pref").value="";$("#passportBatchLink").value="";autoFilledBatchCode="";$("#story").value="";$("#qr").removeAttribute("src");$("#passportPublicLink").textContent="บันทึก Passport ก่อนเพื่อสร้าง QR";preview();message("เริ่มสร้าง Passport รายการใหม่");};
+$("#newPassport").onclick=()=>{currentId=null;$("#pname").value="";$("#origin").value="";$("#pingredients").value="";$("#pref").value="";$("#passportBatchLink").value="";autoFilledBatchCode="";$("#story").value="";$("#qr").removeAttribute("src");$("#qr").hidden=true;$("#passportPublicLink").textContent="บันทึก Passport ก่อนเพื่อสร้าง QR";preview();message("เริ่มสร้าง Passport รายการใหม่");};
 ["pname","origin","pingredients","pref","story"].forEach(id=>$("#"+id).addEventListener("input",()=>preview()));
 document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{lang=b.dataset.lang;document.querySelectorAll("[data-lang]").forEach(x=>x.classList.toggle("on",x===b));preview();});
 $("#check").onclick=()=>{let s=$("#guardText").value.toLowerCase(),hits=["ชวนดื่ม","ดื่มกัน","ดื่มเลย","ดื่มแล้ว","drink now","come drink","สุขภาพดี","รักษาโรค","ป้องกันโรค","ลดน้ำหนัก","cure","health benefit","detox"].filter(x=>s.includes(x));$("#guardResult").className="result "+(hits.length?"bad":"good");$("#guardResult").textContent=hits.length?"ควรตรวจสอบข้อความที่พบ: "+hits.join(", ")+" — ระบบนี้ไม่ใช่คำรับรองทางกฎหมาย":"ไม่พบคำสำคัญตามกฎพื้นฐาน แต่ควรตรวจทานก่อนเผยแพร่";};
