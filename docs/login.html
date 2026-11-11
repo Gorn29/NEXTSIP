@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#17382d">
+  <title>เข้าสู่ระบบ | NEXT SIP</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./auth.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <a class="auth-brand" href="./login.html">NEXT SIP <span>AI CRAFT LAB</span></a>
+    <section class="auth-card">
+      <div class="auth-kicker">WELCOME TO NEXT SIP</div>
+      <div id="login-panel">
+        <h1>ยินดีต้อนรับกลับ</h1>
+        <p class="auth-subtitle">เข้าสู่ระบบเพื่อจัดการพื้นที่ทำงานของคุณ</p>
+        <form id="login-form">
+          <label class="field"><span>อีเมล</span><input id="login-email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+          <label class="field"><span>รหัสผ่าน</span><input id="login-password" type="password" autocomplete="current-password" required minlength="8" placeholder="กรอกรหัสผ่าน"></label>
+          </form>
+        <div class="auth-actions">
+          <button class="auth-secondary-action" id="show-register" type="button">ยังไม่มีบัญชี? สมัครสมาชิก</button>
+          <button class="auth-primary" type="submit" form="login-form">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+      <div id="register-panel" hidden>
+        <h1>สร้างบัญชี NEXT SIP</h1>
+        <p class="auth-subtitle">สมัครเพื่อเริ่มจัดการข้อมูลผู้ผลิตและผลิตภัณฑ์</p>
+        <form id="register-form">
+          <label class="field"><span>ชื่อที่ใช้แสดง</span><input id="register-name" type="text" autocomplete="name" maxlength="100" required placeholder="ชื่อของคุณ"></label>
+          <label class="field"><span>อีเมล</span><input id="register-email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+          <label class="field"><span>รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</span><input id="register-password" type="password" autocomplete="new-password" minlength="8" required placeholder="สร้างรหัสผ่าน"></label>
+          <label class="field"><span>ยืนยันรหัสผ่าน</span><input id="register-confirm" type="password" autocomplete="new-password" minlength="8" required placeholder="กรอกรหัสผ่านอีกครั้ง"></label>
+          <button class="auth-primary" type="submit">สมัครสมาชิก</button>
+        </form>
+        <button class="auth-link" id="show-login" type="button">มีบัญชีแล้ว? เข้าสู่ระบบ</button>
+      </div>
+      <div class="auth-divider"></div>
+      <form id="reset-form" class="reset-form">
+        <label class="field"><span>ลืมรหัสผ่าน? กรอกอีเมลเพื่อขอลิงก์ตั้งรหัสผ่านใหม่</span><input id="reset-email" type="email" required placeholder="อีเมลของบัญชี"></label>
+        <button class="auth-secondary" type="submit">ส่งลิงก์รีเซ็ตรหัสผ่าน</button>
+      </form>
+      <div id="auth-status" class="auth-status" role="status" aria-live="polite" hidden></div>
+    </section>
+    <p class="auth-foot">THAI CRAFT · RESPONSIBLE BY DESIGN</p>
+  </main>
+  <script type="module" src="./auth.js"></script>
+</body>
+</html>
