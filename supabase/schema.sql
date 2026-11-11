@@ -183,3 +183,13 @@ drop policy if exists "Owners can update passports" on public.product_passports;
 create policy "Owners can update passports" on public.product_passports for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 drop policy if exists "Owners can delete passports" on public.product_passports;
 create policy "Owners can delete passports" on public.product_passports for delete to authenticated using ((select auth.uid()) = user_id);
+
+
+-- Link a Sip Passport to an internal Batch Guardian record.
+-- The public page still exposes only the batch reference text, not private batch measurements.
+alter table public.product_passports
+  add column if not exists batch_id uuid
+  references public.production_batches (id) on delete set null;
+
+create index if not exists product_passports_batch_id_idx
+  on public.product_passports (batch_id);
