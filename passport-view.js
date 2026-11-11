@@ -74,21 +74,29 @@ async function loadPassport() {
       return;
     }
     // Verify the linked Batch using the database relationship, not the visible text alone.
-    const { data: verificationRows, error: verificationError } = await supabase.rpc(
+    $("#batchVerification").textContent = "กำลังตรวจสอบ...";
+    const verificationRequest = supabase.rpc(
       "verify_public_passport",
       { p_passport_id: id }
     );
+    const verificationTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("การตรวจสอบ Batch ใช้เวลานานเกิน 12 วินาที")), 12000)
+    );
 
-    if (verificationError) {
+    try {
+      const { data: verificationRows, error: verificationError } =
+        await Promise.race([verificationRequest, verificationTimeout]);
+      if (verificationError) throw verificationError;
+
+      const verification = Array.isArray(verificationRows)
+        ? verificationRows[0]
+        : verificationRows;
+      showPassport(passport, verification || null);
+    } catch (verificationError) {
       console.error("Batch verification error:", verificationError);
       showPassport(passport, null);
-      return;
+      $("#batchVerification").title = verificationError?.message || "Batch verification failed";
     }
-
-    const verification = Array.isArray(verificationRows)
-      ? verificationRows[0]
-      : verificationRows;
-    showPassport(passport, verification || null);
   } catch (error) {
     console.error("Sip Passport loading error:", error);
     showError("โหลดข้อมูลไม่สำเร็จ: " + (error?.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
