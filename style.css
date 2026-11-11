@@ -109,3 +109,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; }
 }
+/* Authentication guard and signed-in account controls */
+.auth-pending { visibility:hidden; }
+.top { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+.account-bar { display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap; }
+.account-email { color:var(--ink); font-size:11px; }
+.account-logout { padding:7px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--green); font:inherit; font-size:11px; cursor:pointer; }
+.account-logout:disabled { opacity:.6; }
