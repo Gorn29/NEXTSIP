@@ -116,3 +116,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .account-email { color:var(--ink); font-size:11px; }
 .account-logout { padding:7px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--green); font:inherit; font-size:11px; cursor:pointer; }
 .account-logout:disabled { opacity:.6; }
+
+
+/* Flavor Studio multi-select tags */
+.flavor-tag-field{margin-top:18px}.flavor-tag-groups{display:grid;gap:14px;margin-top:12px}.flavor-tag-group{display:grid;gap:8px}.flavor-tag-group>b{color:#41594c;font-size:11px}.flavor-tag[aria-pressed="true"]{background:#e4f0d9;border-color:#8fb27f;color:#214f36;box-shadow:inset 0 0 0 1px rgba(111,159,105,.18)}#selectedFlavorTags{margin:12px 0 0;line-height:1.8}
