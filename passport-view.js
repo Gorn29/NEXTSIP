@@ -10,7 +10,7 @@ function showError(message) {
   $("#passportError").textContent = message;
 }
 
-function showPassport(passport) {
+function showPassport(passport, verification) {
   $("#passportContent").hidden = false;
   $("#productName").textContent = passport.product_name || "ไม่ระบุชื่อผลิตภัณฑ์";
   $("#origin").textContent = passport.origin || "ไม่ระบุแหล่งผลิต";
@@ -25,6 +25,28 @@ function showPassport(passport) {
     : passport.batch_status === "active"
       ? "กำลังดำเนินการ"
       : "ยังไม่ได้เชื่อม Batch";
+  const verificationEl = $("#batchVerification");
+  if (!verification) {
+    verificationEl.textContent = "ตรวจสอบไม่ได้ในขณะนี้";
+    verificationEl.style.color = "#8a6b35";
+  } else if (!verification.batch_verified) {
+    verificationEl.textContent = passport.batch_reference
+      ? "ยังไม่พบการเชื่อมโยง Batch ในฐานข้อมูล"
+      : "ยังไม่ได้เชื่อม Batch";
+    verificationEl.style.color = "#748178";
+  } else if (verification.reference_matches) {
+    verificationEl.textContent = "✓ Verified · ตรวจสอบพบ Batch ที่เชื่อมโยงจริง";
+    verificationEl.style.color = "#287247";
+    if (verification.verified_batch_code) {
+      $("#batch").textContent = verification.verified_batch_code;
+    }
+  } else {
+    verificationEl.textContent = "พบ Batch แต่รหัสอ้างอิงไม่ตรงกัน";
+    verificationEl.style.color = "#a34732";
+    if (verification.verified_batch_code) {
+      $("#batch").textContent = verification.verified_batch_code;
+    }
+  }
   $("#updated").textContent = "ข้อมูล Passport · " + (passport.created_at
     ? new Date(passport.created_at).toLocaleDateString("th-TH")
     : "");
@@ -51,7 +73,22 @@ async function loadPassport() {
       showError("ไม่พบ Passport นี้ หรือเจ้าของยังไม่ได้เผยแพร่ข้อมูล");
       return;
     }
-    showPassport(passport);
+    // Verify the linked Batch using the database relationship, not the visible text alone.
+    const { data: verificationRows, error: verificationError } = await supabase.rpc(
+      "verify_public_passport",
+      { p_passport_id: id }
+    );
+
+    if (verificationError) {
+      console.error("Batch verification error:", verificationError);
+      showPassport(passport, null);
+      return;
+    }
+
+    const verification = Array.isArray(verificationRows)
+      ? verificationRows[0]
+      : verificationRows;
+    showPassport(passport, verification || null);
   } catch (error) {
     console.error("Sip Passport loading error:", error);
     showError("โหลดข้อมูลไม่สำเร็จ: " + (error?.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"));
